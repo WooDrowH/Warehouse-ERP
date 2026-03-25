@@ -39,6 +39,11 @@ TEMPLATE_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
 ASSET_DIR = BASE_DIR / "assets" / "images"
 
+# Ensure mount points and template directories exist before FastAPI mounts them
+TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
+ASSET_DIR.mkdir(parents=True, exist_ok=True)
+
 THEMES = {
     "Dark Modern": {"class": "theme-dark-modern", "logo": "arcosa.png"},
     "Light Modern": {"class": "theme-light-modern", "logo": "arcosa.png"},
@@ -144,6 +149,7 @@ def generate_reference(prefix: str, conn: sqlite3.Connection) -> str:
 
 
 def init_templates() -> None:
+    TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
     (TEMPLATE_DIR / "base.html").write_text(BASE_TEMPLATE, encoding="utf-8")
     (TEMPLATE_DIR / "login.html").write_text(LOGIN_TEMPLATE, encoding="utf-8")
     (TEMPLATE_DIR / "dashboard.html").write_text(DASHBOARD_TEMPLATE, encoding="utf-8")
@@ -158,6 +164,7 @@ def init_templates() -> None:
 
 
 def init_static() -> None:
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
     (STATIC_DIR / "style.css").write_text(STYLE_CSS, encoding="utf-8")
     (STATIC_DIR / "app.js").write_text(APP_JS, encoding="utf-8")
     (STATIC_DIR / "manifest.json").write_text(MANIFEST_JSON, encoding="utf-8")
@@ -1260,7 +1267,4 @@ def serve_file(file_path: str):
 
 
 if __name__ == "__main__":
-    import os
-
-port = int(os.environ.get("PORT", 8000))
-uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run("WH_ENTERPRISE_WEB:app", host="0.0.0.0", port=8000, reload=False)
