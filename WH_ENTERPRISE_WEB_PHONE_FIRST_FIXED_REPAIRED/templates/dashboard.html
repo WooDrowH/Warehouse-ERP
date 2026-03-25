@@ -1,0 +1,105 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="grid cols-4">
+  <div class="stat card"><div class="label">Inventory Items</div><div class="value">{{ stats.total_items }}</div></div>
+  <div class="stat card"><div class="label">Inventory Value</div><div class="value">{{ money(stats.total_value) }}</div></div>
+  <div class="stat card"><div class="label">Open Requisitions</div><div class="value">{{ stats.open_req }}</div></div>
+  <div class="stat card"><div class="label">Received Requisitions</div><div class="value">{{ stats.received }}</div></div>
+</div>
+
+<div class="grid cols-2" style="margin-top:18px;">
+  <div class="card">
+    <h2>Low Stock Alerts</h2>
+    {% if stats.low_stock %}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Part #</th><th>Description</th><th>On Hand</th><th>Min</th><th>Reorder</th></tr></thead>
+          <tbody>
+          {% for item in stats.low_stock %}
+            <tr>
+              <td>{{ item.part_no }}</td>
+              <td>{{ item.description }}</td>
+              <td><span class="status {% if item.on_hand <= 0 %}rejected{% else %}partially-received{% endif %}">{{ item.on_hand }}</span></td>
+              <td>{{ item.min_level }}</td>
+              <td>{{ item.reorder_qty }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="notice">No items are below the minimum level.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Pending Requisitions</h2>
+    {% if stats.pending %}
+      <div class="timeline">
+      {% for req in stats.pending %}
+        <div class="timeline-item">
+          <strong><a href="/requisitions/{{ req.id }}">{{ req.req_no }}</a></strong>
+          <div class="small">{{ req.requester }} · {{ req.department }}</div>
+          <div><span class="status {{ req.status|lower|replace(' ','-') }}">{{ req.status }}</span></div>
+        </div>
+      {% endfor %}
+      </div>
+    {% else %}
+      <div class="notice">No requisitions waiting right now.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h2>Top Items Used</h2>
+    {% if stats.top_items %}
+      {% set max_qty = stats.top_items[0].total_qty or 1 %}
+      {% for item in stats.top_items %}
+        <div style="margin-bottom:12px;">
+          <div><strong>{{ item.description }}</strong> · {{ item.total_qty }}</div>
+          <div class="bar"><span style="width: {{ (item.total_qty / max_qty * 100) if max_qty else 0 }}%"></span></div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="notice">No usage yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Most Trips per Employee</h2>
+    {% if stats.trips %}
+      {% set max_trip = stats.trips[0].trips or 1 %}
+      {% for t in stats.trips %}
+        <div style="margin-bottom:12px;">
+          <div><strong>{{ t.employee }}</strong> · {{ t.trips }} trips</div>
+          <div class="bar"><span style="width: {{ (t.trips / max_trip * 100) if max_trip else 0 }}%"></span></div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="notice">No trip data yet.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Recent Requisitions</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Req #</th><th>Requester</th><th>Department</th><th>Status</th><th>Updated</th></tr></thead>
+      <tbody>
+      {% for req in requisitions %}
+        <tr>
+          <td><a href="/requisitions/{{ req.id }}">{{ req.req_no }}</a></td>
+          <td>{{ req.requester }}</td>
+          <td>{{ req.department }}</td>
+          <td><span class="status {{ req.status|lower|replace(' ','-') }}">{{ req.status }}</span></td>
+          <td>{{ req.updated_at }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

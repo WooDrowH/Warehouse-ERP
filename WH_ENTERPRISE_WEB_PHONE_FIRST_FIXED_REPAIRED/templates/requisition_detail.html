@@ -1,0 +1,189 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+    <div>
+      <h2>{{ req.req_no }}</h2>
+      <div class="small">{{ req.requester }} · {{ req.department }} · Created {{ req.created_at }}</div>
+      <div style="margin-top:8px;"><span class="status {{ req.status|lower|replace(' ','-') }}">{{ req.status }}</span></div>
+    </div>
+    <div class="notice">
+      <strong>Current Step</strong>
+      <div class="small">
+        {% if req.status == "Draft" %}Awaiting submission from requester.
+        {% elif req.status == "Awaiting First Approver" %}Waiting on first approver.
+        {% elif req.status == "Awaiting Buyer Price Verification" %}Waiting on buyer price verification.
+        {% elif req.status == "Awaiting Plant Manager Final Approval" %}Waiting on plant manager final approval.
+        {% elif req.status == "Awaiting Buyer PO Attachment" %}Buyer may attach purchase order.
+        {% elif req.status == "Ordered" %}PO attached, ready to receive.
+        {% elif req.status == "Partially Received" %}Some items have been received.
+        {% elif req.status == "Received" %}Fully received.
+        {% else %}{{ req.status }}{% endif %}
+      </div>
+    </div>
+  </div>
+  {% if req.notes %}
+    <div class="notice" style="margin-top:12px;"><strong>Notes:</strong> {{ req.notes }}</div>
+  {% endif %}
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Line Items</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Part #</th><th>Description</th><th>Qty</th><th>Unit Cost</th><th>Total</th><th>Received</th></tr></thead>
+        <tbody>
+          {% for line in lines %}
+          <tr>
+            <td>{{ line.part_no }}</td>
+            <td>{{ line.description }}</td>
+            <td>{{ line.qty }}</td>
+            <td>{{ money(line.unit_cost) }}</td>
+            <td>{{ money(line.total_cost) }}</td>
+            <td>{{ line.received_qty }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:18px;">Actions</h3>
+    <div class="form-actions">
+      {% if req.status == "Draft" %}
+      <form method="post" action="/requisitions/{{ req.id }}/action">
+        <input type="hidden" name="action" value="submit">
+        <input type="hidden" name="comment" value="Submitted by requester">
+        <button class="btn primary" type="submit">Submit to First Approver</button>
+      </form>
+      {% endif %}
+
+      {% if req.status == "Awaiting First Approver" and (user.role in ['first_approver','admin']) %}
+      <form method="post" action="/requisitions/{{ req.id }}/action">
+        <input type="hidden" name="action" value="approve_first">
+        <input type="hidden" name="comment" value="">
+        <button class="btn success" type="submit">Approve First Step</button>
+      </form>
+      <form method="post" action="/requisitions/{{ req.id }}/action">
+        <input type="hidden" name="action" value="reject">
+        <input name="comment" placeholder="Rejection reason">
+        <button class="btn danger" type="submit">Reject</button>
+      </form>
+      {% endif %}
+
+      {% if req.status == "Awaiting Buyer Price Verification" and (user.role in ['buyer','admin']) %}
+      <form method="post" action="/requisitions/{{ req.id }}/action">
+        <input type="hidden" name="action" value="approve_buyer">
+        <input type="hidden" name="comment" value="">
+        <button class="btn success" type="submit">Approve Price Verification</button>
+      </form>
+      <form method="post" action="/requisitions/{{ req.id }}/action">
+        <input type="hidden" name="action" value="reject">
+        <input name="comment" placeholder="Rejection reason">
+        <button class="btn danger" type="submit">Reject</button>
+      </form>
+      {% endif %}
+
+      {% if req.status == "Awaiting Plant Manager Final Approval" and (user.role in ['plant_manager','admin']) %}
+      <form method="post" action="/requisitions/{{ req.id }}/action">
+        <input type="hidden" name="action" value="approve_final">
+        <input type="hidden" name="comment" value="">
+        <button class="btn success" type="submit">Final Approve</button>
+      </form>
+      <form method="post" action="/requisitions/{{ req.id }}/action">
+        <input type="hidden" name="action" value="reject">
+        <input name="comment" placeholder="Rejection reason">
+        <button class="btn danger" type="submit">Reject</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Purchase Order</h3>
+    {% if po %}
+      <div class="notice">
+        <div><strong>PO #:</strong> {{ po.po_number }}</div>
+        <div><strong>Vendor:</strong> {{ po.vendor }}</div>
+        <div><strong>Attached:</strong> {% if po.attachment %}<a href="/{{ po.attachment }}">{{ po.attachment.split('/')[-1] }}</a>{% else %}No file{% endif %}</div>
+      </div>
+    {% endif %}
+    {% if req.status == "Awaiting Buyer PO Attachment" and (user.role in ['buyer','admin']) %}
+      <form method="post" action="/requisitions/{{ req.id }}/attach-po" enctype="multipart/form-data">
+        <div class="form-row two">
+          <div><label>PO Number</label><input name="po_number" required placeholder="PO-12345"></div>
+          <div><label>Vendor</label><input name="vendor" placeholder="Vendor name"></div>
+        </div>
+        <div class="file-drop dropzone">
+          <label>Purchase Order PDF</label>
+          <input type="file" name="po_file" accept="application/pdf" class="file-input">
+          <div class="small">Drag and drop the PO PDF here or tap to choose.</div>
+        </div>
+        <div class="form-actions">
+          <button class="btn primary" type="submit">Attach PO</button>
+        </div>
+      </form>
+    {% endif %}
+
+    <h3 style="margin-top:18px;">Receiving</h3>
+    {% if req.status in ["Ordered", "Partially Received"] and (user.role in ['receiver','buyer','plant_manager','admin']) %}
+      <form method="post" action="/requisitions/{{ req.id }}/receive" enctype="multipart/form-data">
+        {% for line in lines %}
+          <div class="form-row three">
+            <div><label>{{ line.part_no }} - Qty Ordered</label><input value="{{ line.qty }}" disabled></div>
+            <div><label>Qty to Receive</label><input type="number" name="received_qty_{{ line.id }}" min="0" max="{{ line.qty - line.received_qty }}" value="{{ line.qty - line.received_qty }}"></div>
+            <div><label>Remaining</label><input value="{{ line.qty - line.received_qty }}" disabled></div>
+          </div>
+        {% endfor %}
+        <div class="file-drop dropzone">
+          <label>Packing List PDF</label>
+          <input type="file" name="packing_file" accept="application/pdf" class="file-input">
+          <div class="small">Drag and drop the packing list PDF here or tap to choose.</div>
+        </div>
+        <div style="margin-top:12px;">
+          <label>Receiving Notes</label>
+          <textarea name="notes" placeholder="Optional notes"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn success" type="submit">Mark Received</button>
+        </div>
+      </form>
+    {% endif %}
+
+    {% if receipt %}
+      <div class="notice" style="margin-top:12px;">
+        <strong>Latest Receipt</strong>
+        <div class="small">Received by {{ receipt.received_by }} at {{ receipt.received_at }}</div>
+        {% if receipt.packing_list_file %}
+          <div><a href="/{{ receipt.packing_list_file }}">Packing List File</a></div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Approval History</h3>
+    <div class="timeline">
+      {% for h in history %}
+        <div class="timeline-item">
+          <strong>{{ h.step_name }}</strong> · {{ h.action }}
+          <div class="small">{{ h.actor }} · {{ h.created_at }}</div>
+          {% if h.comment %}<div class="small">{{ h.comment }}</div>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Purchase Order / Receipt Status</h3>
+    <div class="notice">
+      <div><strong>PO Number:</strong> {{ req.po_number or "Not assigned yet" }}</div>
+      <div><strong>Received By:</strong> {{ req.received_by or "Not received yet" }}</div>
+      <div><strong>Received At:</strong> {{ req.received_at or "Not received yet" }}</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

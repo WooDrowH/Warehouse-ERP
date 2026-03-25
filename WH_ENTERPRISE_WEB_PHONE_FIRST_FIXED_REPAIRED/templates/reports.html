@@ -1,0 +1,59 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="grid cols-2">
+  <div class="card">
+    <h2>Top Items Used</h2>
+    {% if top_items %}
+      {% set max_qty = top_items[0].total_qty or 1 %}
+      {% for item in top_items %}
+        <div style="margin-bottom:12px;">
+          <div><strong>{{ item.description }}</strong> · {{ item.total_qty }} issued · {{ money(item.total_cost) }}</div>
+          <div class="bar"><span style="width: {{ (item.total_qty / max_qty * 100) if max_qty else 0 }}%"></span></div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="notice">No item usage has been logged yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Most Trips per Employee</h2>
+    {% if trips %}
+      {% set max_trip = trips[0].trips or 1 %}
+      {% for t in trips %}
+        <div style="margin-bottom:12px;">
+          <div><strong>{{ t.employee }}</strong> · {{ t.trips }} trips</div>
+          <div class="bar"><span style="width: {{ (t.trips / max_trip * 100) if max_trip else 0 }}%"></span></div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="notice">No trip data yet.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Low Inventory Items</h2>
+  {% if low_stock %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Part #</th><th>Description</th><th>On Hand</th><th>Min Level</th><th>Reorder Qty</th></tr></thead>
+        <tbody>
+        {% for item in low_stock %}
+          <tr>
+            <td>{{ item.part_no }}</td>
+            <td>{{ item.description }}</td>
+            <td>{{ item.on_hand }}</td>
+            <td>{{ item.min_level }}</td>
+            <td>{{ item.reorder_qty }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="notice">No low inventory items at this time.</div>
+  {% endif %}
+</div>
+{% endblock %}

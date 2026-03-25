@@ -1,0 +1,24 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Receiving Queue</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Req #</th><th>Requester</th><th>Department</th><th>Status</th><th>PO #</th><th>Open</th></tr></thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{ row.req_no }}</td>
+          <td>{{ row.requester }}</td>
+          <td>{{ row.department }}</td>
+          <td><span class="status {{ row.status|lower|replace(' ','-') }}">{{ row.status }}</span></td>
+          <td>{{ row.po_number or "—" }}</td>
+          <td><a class="btn" href="/requisitions/{{ row.id }}">Open</a></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

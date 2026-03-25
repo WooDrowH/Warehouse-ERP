@@ -1,0 +1,4 @@
+Part #,Description,On Hand,Min Level,Reorder Qty,Unit Cost,Vendor
+1001,Gloves,200,50,150,1.25,Example Vendor
+1002,Bolts,500,100,300,0.10,Example Vendor
+1003,Zip Ties,250,50,200,0.08,Example Vendor

@@ -1,0 +1,31 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width: 560px; margin: 28px auto;">
+  <h2>Sign in</h2>
+  <p class="small">Use one of the seeded accounts to start, then add your own users under User Administration.</p>
+  <div class="notice">
+    <strong>Phone-first access</strong>
+    <div class="small">Open this ERP in Safari, then use Share → Add to Home Screen for an app-like launch icon.</div>
+  </div>
+  <form method="post" action="/login" class="grid">
+    <div class="form-row two">
+      <div>
+        <label>Username</label>
+        <input name="username" required placeholder="admin" autocomplete="username">
+      </div>
+      <div>
+        <label>Password</label>
+        <input name="password" type="password" required placeholder="admin123" autocomplete="current-password">
+      </div>
+    </div>
+    <div class="form-actions">
+      <input type="submit" class="btn primary" value="Login">
+    </div>
+  </form>
+  <div class="notice" style="margin-top:16px;">
+    <strong>Seeded accounts:</strong>
+    <div class="small">admin / admin123 · requester / requester123 · approver / approver123 · buyer / buyer123 · plant / plant123 · receiver / receiver123</div>
+  </div>
+</div>
+{% endblock %}

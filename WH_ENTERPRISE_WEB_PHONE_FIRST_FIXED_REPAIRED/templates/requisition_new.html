@@ -1,0 +1,51 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>New Requisition</h2>
+  <p class="small">Add as many items as needed, then submit into the approval workflow.</p>
+
+  <form method="post" action="/requisitions/new" id="reqForm">
+    <div class="form-row two">
+      <div><label>Requester</label><input name="requester" required value="{{ user.full_name }}"></div>
+      <div><label>Department</label><input name="department" required value="{{ user.role.replace('_',' ').title() }}"></div>
+    </div>
+    <div><label>Notes</label><textarea name="notes" placeholder="Optional notes for approvers"></textarea></div>
+
+    <div class="card" style="margin-top:16px; background: rgba(255,255,255,0.02);">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+        <h3 style="margin:0;">Line Items</h3>
+        <button type="button" class="btn info" id="addLineBtn">Add Line</button>
+      </div>
+
+      <div class="table-wrap" style="margin-top:12px;">
+        <table id="lineTable">
+          <thead>
+            <tr><th>Part #</th><th>Description</th><th>Qty</th><th>Unit Cost</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr class="line-row">
+              <td>
+                <input name="part_no" list="partlist" class="part-input" placeholder="Part #">
+              </td>
+              <td><input name="description" class="desc-input" placeholder="Description"></td>
+              <td><input name="qty" type="number" min="1" value="1"></td>
+              <td><input name="unit_cost" type="number" step="0.01" value="0"></td>
+              <td><button type="button" class="btn danger remove-line">X</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <datalist id="partlist">
+          {% for item in items %}
+          <option value="{{ item.part_no }}">{{ item.description }}</option>
+          {% endfor %}
+        </datalist>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <input type="submit" class="btn primary" value="Create Requisition">
+    </div>
+  </form>
+</div>
+{% endblock %}
