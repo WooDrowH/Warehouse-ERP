@@ -1,0 +1,99 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Warehouse ERP">
+  <meta name="theme-color" content="#111111">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/style.css">
+  <script defer src="/static/app.js"></script>
+  <title>{{ title or "Warehouse Enterprise ERP" }}</title>
+</head>
+<body class="{{ theme_class }}" data-path="{{ request.url.path if request else '/' }}">
+  <div class="topbar">
+    <div class="brand">
+      <img src="/assets/images/{{ logo_name }}" alt="logo" class="logo-banner">
+      <div>
+        <div style="font-size:1.05rem;">Warehouse Enterprise ERP</div>
+        <div class="small">{{ user.full_name if user else "Guest" }}{% if user %} · {{ user.role.replace('_',' ').title() }}{% endif %}</div>
+      </div>
+    </div>
+
+    <div class="navlinks desktop-nav">
+      {% if user %}
+      <a href="/">Dashboard</a>
+      <a href="/inventory">Inventory</a>
+      <a href="/requisitions">Requisitions</a>
+      <a href="/purchase-orders">Purchase Orders</a>
+      <a href="/receiving">Receiving</a>
+      <a href="/reports">Reports</a>
+      {% if user.role == "admin" %}<a href="/users">Users</a>{% endif %}
+      {% endif %}
+    </div>
+
+    <div class="nav-right">
+      <form method="post" action="/theme" style="display:flex; gap:8px; align-items:center; margin:0;">
+        <select name="theme" onchange="this.form.submit()" aria-label="Theme">
+          {% for t in themes %}
+          <option value="{{ t }}" {% if t == theme_name %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% if user %}
+      <form method="post" action="/logout" style="margin:0;">
+        <button class="btn" type="submit">Logout</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if user %}
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <a href="/">Home</a>
+    <a href="/inventory">Inventory</a>
+    <a href="/requisitions/new">New Req</a>
+    <a href="/purchase-orders">POs</a>
+    <a href="/receiving">Receive</a>
+    <a href="/reports">Reports</a>
+  </nav>
+  {% endif %}
+
+  <div class="container">
+    {% if message %}
+      <div class="flash {{ kind or 'success' }}">{{ message }}</div>
+    {% endif %}
+    <div class="page-grid {% if not user %}no-sidebar{% endif %}">
+      {% if user %}
+      <aside class="sidebar">
+        <h3>Quick Links</h3>
+        <a href="/">Dashboard</a>
+        <a href="/requisitions/new">New Requisition</a>
+        <a href="/inventory">Add / Issue Inventory</a>
+        <a href="/reports">Usage Reports</a>
+        {% if user.role == 'admin' %}
+        <a href="/users">User Administration</a>
+        {% endif %}
+        <div class="notice" style="margin-top:14px;">
+          <div><strong>System Status</strong></div>
+          <div class="small">Phone-first ERP layout with touch-friendly controls and stand-alone home screen support.</div>
+        </div>
+      </aside>
+      {% endif %}
+      <main class="content">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+    <div class="footer">Warehouse Enterprise ERP · {{ current_year }}</div>
+  </div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/static/sw.js').catch(()=>{});
+    }
+  </script>
+</body>
+</html>
